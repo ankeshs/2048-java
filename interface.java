@@ -8,6 +8,8 @@ import java.util.*;
 class State {
 	int board[][];
         
+        static boolean gameState = true;
+        
 	State(){
 		board = new int[4][4];	
 	}
@@ -31,22 +33,30 @@ class Interface extends JFrame implements KeyListener{
 	State state;
 	int num_row, num_col;
 	JLabel tile[][]; 
+        JLabel status;
         Random rand;
+        Player player;
 	Interface(State s) {
 		state = s;
 		num_row = s.board.length;
 		num_col = s.board[0].length;
 		tile = new JLabel[num_row][num_col];
-		setLayout(new GridLayout(num_row, num_col));
+                setLayout(new BorderLayout());
+                JPanel pGrid=new JPanel();                
+		pGrid.setLayout(new GridLayout(num_row, num_col));
 		for(int i=0; i<num_row; i++){
 			for(int j=0; j<num_col; j++){
-				add(tile[i][j]=new JLabel(State.getHtml(0)));
+				pGrid.add(tile[i][j]=new JLabel(State.getHtml(0)));
 			}
 		}
+		add(pGrid, BorderLayout.CENTER);
+                add(status=new JLabel(" "), BorderLayout.SOUTH);
 		addKeyListener(this);
                 rand = new Random();
                 placeRandom();
-                renderCells();
+                placeRandom();
+                player=new Player(state);
+                renderCells();                
 	}
 	
         public void keyPressed(KeyEvent evt){
@@ -58,8 +68,18 @@ class Interface extends JFrame implements KeyListener{
                 case KeyEvent.VK_DOWN: System.out.println("down"); move('D'); break;
                 case KeyEvent.VK_LEFT: System.out.println("left"); move('L'); break;
                 case KeyEvent.VK_RIGHT: System.out.println("right"); move('R'); break;
+                case KeyEvent.VK_A: move(player.getNext()); break;
             }
         }
+        
+        public void autoplay(){
+            move(player.getNext());
+            try{
+            Thread.sleep(300);
+            }catch(Exception e){}
+            if(State.gameState) autoplay();
+        }
+        
         public void keyTyped(KeyEvent evt) {
         }
 	
@@ -82,13 +102,14 @@ class Interface extends JFrame implements KeyListener{
             }
             if(pos.size()==0)return false;
             Point p = pos.get(rand.nextInt(pos.size()));
-            state.board[(int)p.getX()][(int)p.getY()] = opts[rand.nextInt(opts.length)];
+            state.board[(int)p.getX()][(int)p.getY()] = opts[rand.nextInt(opts.length)];            
             return true;
         }
         
         void move(char flag){
             int[][] b = state.board;
             int s=0;
+            boolean valid = false;
             switch(flag){
                 case 'L':
                     s = 0;
@@ -97,7 +118,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[i][s]!=0) {
                                 int sc = s+1;
                                 while(sc<num_col && b[i][sc]==0) sc++;
-                                if(sc<num_col && b[i][sc]==b[i][s]){ b[i][s]*=2; b[i][sc]=0; }
+                                if(sc<num_col && b[i][sc]==b[i][s]){ b[i][s]*=2; b[i][sc]=0; valid=true;}
                             }                    
                         }
                         s++;
@@ -108,7 +129,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[i][s]==0) {
                                 int sc = s+1;
                                 while(sc<num_col && b[i][sc]==0) sc++;
-                                if(sc<num_col){ b[i][s]=b[i][sc]; b[i][sc]=0; }
+                                if(sc<num_col && b[i][sc]!=0){ b[i][s]=b[i][sc]; b[i][sc]=0; valid=true;}
                             }                    
                         }
                         s++;
@@ -122,7 +143,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[i][s]!=0) {
                                 int sc = s-1;
                                 while(sc>=0 && b[i][sc]==0) sc--;
-                                if(sc>=0 && b[i][sc]==b[i][s]){ b[i][s]*=2; b[i][sc]=0; }
+                                if(sc>=0 && b[i][sc]==b[i][s]){ b[i][s]*=2; b[i][sc]=0; valid=true;}
                             }                    
                         }
                         s--;
@@ -133,7 +154,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[i][s]==0) {
                                 int sc = s-1;
                                 while(sc>=0 && b[i][sc]==0) sc--;
-                                if(sc>=0){ b[i][s]=b[i][sc]; b[i][sc]=0; }
+                                if(sc>=0 && b[i][sc]!=0){ b[i][s]=b[i][sc]; b[i][sc]=0; valid=true;}
                             }                    
                         }
                         s--;
@@ -147,7 +168,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[s][i]!=0) {
                                 int sc = s+1;
                                 while(sc<num_row && b[sc][i]==0) sc++;
-                                if(sc<num_row && b[sc][i]==b[s][i]){ b[s][i]*=2; b[sc][i]=0; }
+                                if(sc<num_row && b[sc][i]==b[s][i]){ b[s][i]*=2; b[sc][i]=0; valid=true;}
                             }                    
                         }
                         s++;
@@ -158,7 +179,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[s][i]==0) {
                                 int sc = s+1;
                                 while(sc<num_row && b[sc][i]==0) sc++;
-                                if(sc<num_row){ b[s][i]=b[sc][i]; b[sc][i]=0; }
+                                if(sc<num_row && b[sc][i]!=0){ b[s][i]=b[sc][i]; b[sc][i]=0; valid=true;}
                             }                    
                         }
                         s++;
@@ -172,7 +193,7 @@ class Interface extends JFrame implements KeyListener{
                             if(b[s][i]!=0) {
                                 int sc = s-1;
                                 while(sc>=0 && b[sc][i]==0) sc--;
-                                if(sc>=0 && b[sc][i]==b[s][i]){ b[s][i]*=2; b[sc][i]=0; }
+                                if(sc>=0 && b[sc][i]==b[s][i]){ b[s][i]*=2; b[sc][i]=0; valid=true;}
                             }                    
                         }
                         s--;
@@ -183,19 +204,23 @@ class Interface extends JFrame implements KeyListener{
                             if(b[s][i]==0) {
                                 int sc = s-1;
                                 while(sc>=0 && b[sc][i]==0) sc--;
-                                if(sc>=0){ b[s][i]=b[sc][i]; b[sc][i]=0; }
+                                if(sc>=0 && b[sc][i]!=0){ b[s][i]=b[sc][i]; b[sc][i]=0; valid=true;}
                             }                    
                         }
                         s--;
                     }
                 break;
             }
-            if(placeRandom()) {
-                renderCells();
-            } else {
-                removeKeyListener(this);
-                JOptionPane.showMessageDialog(null, "Game over!");
-            }
+            status.setText("Move : "+flag);
+            if(valid){
+                if(placeRandom()) {
+                    renderCells();
+                    player.update(state);
+                } else {
+                    removeKeyListener(this);
+                    JOptionPane.showMessageDialog(null, "Game over!");
+                }
+            }            
         }
 }
 
@@ -205,5 +230,6 @@ class Game{
             Interface f = new Interface(s);
             f.setSize(400,400);
             f.setVisible(true);
+            f.autoplay();
 	}
 }
